@@ -2,11 +2,6 @@ import pandas as pd
 import streamlit as st
 # read pcp file from SWAT format
 
-
-
-
-
-
 def read_pcp():
     uploaded_file = st.sidebar.file_uploader("PCP file from SWAT")
     fordf = uploaded_file
