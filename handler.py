@@ -1,26 +1,35 @@
 import pandas as pd
 import streamlit as st
+from io import StringIO
+
 # read pcp file from SWAT formatß
 
-def read_pcp():
-    uploaded_file = st.sidebar.file_uploader("PCP file from SWAT")
-    fordf = uploaded_file
+@st.cache_data
+def read_pcp(uploaded_file):
     if uploaded_file:
-        file_content = uploaded_file.readlines()[2].strip().split()
+        df = pd.read_csv(
+                    uploaded_file,
+                    sep=r'\s+',
+                    skiprows=3,
+                    # header=0,
+                    names=["Year", "j", "pcp", "lat", "lon"]
+                    )
+        year = df.iloc[0, 0]
+        df = df.loc[:, ["Year", "pcp"]]
+        # st.write(info)
+        df.index = pd.date_range(f'1/1/{year}', periods=len(df))
+        # dff.columns = ['Precipitation']
+        # st.write(dff.columns)
+        df.rename(columns={"pcp":"Precipitation"}, inplace=True)
+        df.index.name = "Date"
+        return df
+    
+
+def show_df(uploaded_file):
+    df = read_pcp(uploaded_file)
 
 
-        st.write(file_content)
-        print(fordf)
-        # df = pd.read_csv(
-        #             fordf,
-        #             sep=r'\s+',
-        #             skiprows=4,
-        #             # header=0,
-        #             )
 
-
-        # tdf = st.expander('{} Dataframe for Simulated and Observed Stream Discharge'.format("PCP file from SWAT"))
-        # tdf.dataframe(df)
         
 
         # with open(uploaded_file, 'r') as f:

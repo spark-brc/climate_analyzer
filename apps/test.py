@@ -28,7 +28,7 @@ def yay():
         ]
         for month in months
     ]
-
+    st.dataframe(samples)
     # And finish by styling it up to your liking!
     fig = ridgeplot(
         samples=samples,

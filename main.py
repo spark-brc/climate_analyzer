@@ -94,28 +94,16 @@ st.sidebar.markdown(
     unsafe_allow_html=True
 )
 
-if __name__ == '__main__':
-    #---ONLY HERE TO SHOW OPTIONS WITH HYDRALIT - NOT REQUIRED, use Hydralit constructor parameters.
+def main():
+    pcp_file = st.sidebar.file_uploader("PCP file from SWAT")
 
-    # ws_nams, full_paths = utils.get_watershed_list()
-    # Create Radio Buttons
-    # area = st.sidebar.radio('Select Watershed', ws_nams)
-    st.sidebar.markdown("""<br><br><br><br>""", unsafe_allow_html=True)
-
-    st.markdown(
-        f'''
-            <style>
-                .sidebar .sidebar-content {{
-                    width: 1px;
-                }}
-            </style>
-        ''',
-        unsafe_allow_html=True
-        )
-    # uploaded_file = st.file_uploader("Add text file !")
-    # st.file_uploader()
-    handler.read_pcp()
+    df_pcp = handler.read_pcp(pcp_file)
+    tdf = st.expander('{} Dataframe for Simulated and Observed Stream Discharge'.format("PCP"))
+    tdf.dataframe(df_pcp.loc[:, "Precipitation"], height=500)
+    # st.dataframe(df.loc[:, "Precipitation"])
     st.plotly_chart(test.yay())
+
+    # handler.show_df(uploaded_file)
     
     # st.sidebar.image('./resources/TAMUAgriLifeResearchLogo.png',width=200)
     # st.sidebar.image('./resources/blm-logo.png', width=200)
@@ -143,5 +131,9 @@ if __name__ == '__main__':
     # }
     # #and finally just the entire app and all the children.
     # app.run(complex_nav)
+
+
+if __name__ == '__main__':
+    main()
 
 
