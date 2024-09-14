@@ -4,8 +4,10 @@ import base64
 # from hydralit import HydraApp
 # import apps
 import streamlit as st
+from ridgeplot import ridgeplot
+import numpy as np
 
-
+'''
 st.set_page_config(
     page_title="Ex-stream-ly Cool App",
     page_icon="🧊",
@@ -96,12 +98,31 @@ st.sidebar.markdown(
 
 def main():
     pcp_file = st.sidebar.file_uploader("PCP file from SWAT")
+    if pcp_file:
+        df_pcp = handler.read_pcp(pcp_file)
+        df_pcp = df_pcp.groupby('Year')
 
-    df_pcp = handler.read_pcp(pcp_file)
-    tdf = st.expander('{} Dataframe for Simulated and Observed Stream Discharge'.format("PCP"))
-    tdf.dataframe(df_pcp.loc[:, "Precipitation"], height=500)
-    # st.dataframe(df.loc[:, "Precipitation"])
-    st.plotly_chart(test.yay())
+        fig = ridgeplot(
+            samples=df_pcp,
+            bandwidth=4,
+            # kde_points=np.linspace(-12.5, 112.5, 500),
+            colorscale="viridis",
+            colormode="row-index",
+            coloralpha=0.65,
+            # labels=column_names,
+            linewidth=2,
+            spacing=5 / 9,
+        )
+
+
+
+        print(df_pcp.head(5))
+        tdf = st.expander('{} Dataframe for Simulated and Observed Stream Discharge'.format("PCP"))
+        tdf.dataframe(df_pcp)
+
+
+        # st.dataframe(df.loc[:, "Precipitation"])
+        st.plotly_chart(test.yay())
 
     # handler.show_df(uploaded_file)
     
@@ -110,8 +131,43 @@ def main():
     # st.markdown(footer,unsafe_allow_html=True)
 
     # over_theme = {'txc_inactive': '#FFFFFF'}
-    
+'''
 
+def main_alpha():
+    uploaded_file = "D:\\Projects\\Watersheds\\Ghana\\Analysis\\botanga\prj01\\Scenarios\\Default\\TxtInOut_rice_f\\AF_468597.pcp"
+    df = pd.read_csv(
+                uploaded_file,
+                sep=r'\s+',
+                skiprows=3,
+                # header=0,
+                names=["Year", "j", "pcp", "lat", "lon"]
+                )
+    year = df.iloc[0, 0]
+    df = df.loc[:, ["Year", "pcp"]]
+    # st.write(info)
+    df.index = pd.date_range(f'1/1/{year}', periods=len(df))
+    # dff.columns = ['Precipitation']
+    # st.write(dff.columns)
+    df.rename(columns={"pcp":"Precipitation"}, inplace=True)
+    df.index.name = "Date"
+
+
+    years = df.index.year.unique()
+    dff = pd.DataFrame()
+    for y in years:
+        dfj = df.loc[df.index.year == y, "Precipitation"]
+        dfj.index = dfj.index.dayofyear
+        # dfj.index = df.index.to_julian_date()
+        dff = pd.concat([dff, dfj], axis=1, ignore_index=True)
+        # dff[y] = df.loc[df.index.year == y]
+    dff.columns = years
+
+    # ss  = df.loc[df.index.year == 2019]
+    # print(ss)
+    print(dff.to_numpy())
+
+    # return df
+        
 
 
 
@@ -134,6 +190,9 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    # main()
+    df = main_alpha()
+    # df = df.loc[:, "Precipitation"].groupby(df.index.year)
 
-
+    # print(df[2010])
+    # print(df[2010])

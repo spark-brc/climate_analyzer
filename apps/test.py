@@ -28,6 +28,7 @@ def yay():
         ]
         for month in months
     ]
+    print(samples)
     st.dataframe(samples)
     # And finish by styling it up to your liking!
     fig = ridgeplot(
@@ -53,3 +54,29 @@ def yay():
         showlegend=False,
     )
     return fig
+
+
+
+def yay2(df):
+    fig = ridgeplot(
+        samples=df.dropna().to_numpy(),
+        labels=[str(i) for i in df.columns],
+        coloralpha=0.5,
+        bandwidth=4,
+        kde_points=np.linspace(-25, 110, 400),
+        spacing=0.33,
+        linewidth=2,
+    )
+    fig.update_layout(
+        title="Minimum and maximum daily temperatures in Lincoln, NE (2016)",
+        height=650,
+        width=950,
+        font_size=14,
+        plot_bgcolor="rgb(245, 245, 245)",
+        xaxis_gridcolor="white",
+        yaxis_gridcolor="white",
+        xaxis_gridwidth=2,
+        yaxis_title="Month",
+        xaxis_title="Temperature [F]",
+        showlegend=False,
+    )
