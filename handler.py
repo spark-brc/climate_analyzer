@@ -25,6 +25,29 @@ def read_pcp(uploaded_file):
         return df
     
 
+@st.cache_data
+def read_tmp(tmp_file):
+    if tmp_file:
+        df = pd.read_csv(
+                    tmp_file,
+                    sep=r'\s+',
+                    skiprows=3,
+                    # header=0,
+                    names=["Year", "j", "tmax", "tmin"]
+                    )
+        year = df.iloc[0, 0]
+        df = df.loc[:, ["Year", "tmax", "tmin"]]
+        # st.write(info)
+        df.index = pd.date_range(f'1/1/{year}', periods=len(df))
+        # dff.columns = ['Precipitation']
+        # st.write(dff.columns)
+        # df.rename(columns={"pcp":"Precipitation"}, inplace=True)
+        df.index.name = "Date"
+        return df
+    
+
+
+
 def show_df(uploaded_file):
     df = read_pcp(uploaded_file)
 

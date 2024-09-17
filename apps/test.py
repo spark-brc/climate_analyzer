@@ -46,6 +46,8 @@ def yay():
         width=950,
         font_size=14,
         plot_bgcolor="rgb(245, 245, 245)",
+        colorscale="viridis",
+        colormode="row-index",
         xaxis_gridcolor="white",
         yaxis_gridcolor="white",
         xaxis_gridwidth=2,
@@ -58,18 +60,22 @@ def yay():
 
 
 def yay2(df):
+    tmin = df.min().min()
+    tmax = df.max().max()
     fig = ridgeplot(
         samples=df.dropna().to_numpy(),
         labels=[str(i) for i in df.columns],
         coloralpha=0.5,
-        bandwidth=4,
-        kde_points=np.linspace(-25, 110, 400),
-        spacing=0.33,
-        linewidth=2,
+        colorscale="viridis",
+        colormode="row-index",
+        bandwidth=1,
+        kde_points=np.linspace(tmin, tmax, 400),
+        spacing=0.5,
+        linewidth=1,
     )
     fig.update_layout(
         title="Minimum and maximum daily temperatures in Lincoln, NE (2016)",
-        height=650,
+        height=1000,
         width=950,
         font_size=14,
         plot_bgcolor="rgb(245, 245, 245)",
@@ -80,3 +86,4 @@ def yay2(df):
         xaxis_title="Temperature [F]",
         showlegend=False,
     )
+    return fig

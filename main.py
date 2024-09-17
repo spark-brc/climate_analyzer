@@ -7,7 +7,12 @@ import streamlit as st
 from ridgeplot import ridgeplot
 import numpy as np
 
-'''
+import plotly.graph_objects as go
+from plotly.colors import n_colors
+import numpy as np
+np.random.seed(1)
+
+
 st.set_page_config(
     page_title="Ex-stream-ly Cool App",
     page_icon="🧊",
@@ -96,45 +101,46 @@ st.sidebar.markdown(
     unsafe_allow_html=True
 )
 
-def main():
-    pcp_file = st.sidebar.file_uploader("PCP file from SWAT")
-    if pcp_file:
-        df_pcp = handler.read_pcp(pcp_file)
-        df_pcp = df_pcp.groupby('Year')
 
-        fig = ridgeplot(
-            samples=df_pcp,
-            bandwidth=4,
-            # kde_points=np.linspace(-12.5, 112.5, 500),
-            colorscale="viridis",
-            colormode="row-index",
-            coloralpha=0.65,
-            # labels=column_names,
-            linewidth=2,
-            spacing=5 / 9,
-        )
+# def main():
+#     pcp_file = st.sidebar.file_uploader("PCP file from SWAT")
+#     if pcp_file:
+#         df_pcp = handler.read_pcp(pcp_file)
+#         df_pcp = df_pcp.groupby('Year')
 
-
-
-        print(df_pcp.head(5))
-        tdf = st.expander('{} Dataframe for Simulated and Observed Stream Discharge'.format("PCP"))
-        tdf.dataframe(df_pcp)
+#         fig = ridgeplot(
+#             samples=df_pcp,
+#             bandwidth=4,
+#             # kde_points=np.linspace(-12.5, 112.5, 500),
+#             colorscale="viridis",
+#             colormode="row-index",
+#             coloralpha=0.65,
+#             # labels=column_names,
+#             linewidth=2,
+#             spacing=5 / 9,
+#         )
 
 
-        # st.dataframe(df.loc[:, "Precipitation"])
-        st.plotly_chart(test.yay())
 
-    # handler.show_df(uploaded_file)
+#         print(df_pcp.head(5))
+#         tdf = st.expander('{} Dataframe for Simulated and Observed Stream Discharge'.format("PCP"))
+#         tdf.dataframe(df_pcp)
+
+
+#         # st.dataframe(df.loc[:, "Precipitation"])
+#         st.plotly_chart(test.yay())
+
+#     # handler.show_df(uploaded_file)
     
-    # st.sidebar.image('./resources/TAMUAgriLifeResearchLogo.png',width=200)
-    # st.sidebar.image('./resources/blm-logo.png', width=200)
-    # st.markdown(footer,unsafe_allow_html=True)
+#     # st.sidebar.image('./resources/TAMUAgriLifeResearchLogo.png',width=200)
+#     # st.sidebar.image('./resources/blm-logo.png', width=200)
+#     # st.markdown(footer,unsafe_allow_html=True)
 
-    # over_theme = {'txc_inactive': '#FFFFFF'}
-'''
+#     # over_theme = {'txc_inactive': '#FFFFFF'}
+
 
 def main_alpha():
-    uploaded_file = "D:\\Projects\\Watersheds\\Ghana\\Analysis\\botanga\prj01\\Scenarios\\Default\\TxtInOut_rice_f\\AF_468597.pcp"
+    uploaded_file = "./data/AF_468597.pcp"
     df = pd.read_csv(
                 uploaded_file,
                 sep=r'\s+',
@@ -165,10 +171,44 @@ def main_alpha():
     # ss  = df.loc[df.index.year == 2019]
     # print(ss)
     print(dff.to_numpy())
+    st.plotly_chart(test.yay2(dff))
 
     # return df
         
 
+def main_tmp():
+    uploaded_file = "./data/AF_468597_TMP.tmp"
+    df = pd.read_csv(
+                uploaded_file,
+                sep=r'\s+',
+                skiprows=3,
+                # header=0,
+                names=["Year", "j", "tmax", "tmin"]
+                )
+    year = df.iloc[0, 0]
+    df = df.loc[:, ["Year", "tmax", "tmin"]]
+    # st.write(info)
+    df.index = pd.date_range(f'1/1/{year}', periods=len(df))
+    # dff.columns = ['Precipitation']
+    # st.write(dff.columns)
+    # df.rename(columns={"pcp":"Precipitation"}, inplace=True)
+    df.index.name = "Date"
+
+
+    years = df.index.year.unique()
+    dff = pd.DataFrame()
+    for y in years:
+        dfj = df.loc[df.index.year == y, "tmax"]
+        dfj.index = dfj.index.dayofyear
+        # dfj.index = df.index.to_julian_date()
+        dff = pd.concat([dff, dfj], axis=1, ignore_index=True)
+        # dff[y] = df.loc[df.index.year == y]
+    dff.columns = years
+
+    # ss  = df.loc[df.index.year == 2019]
+    # print(ss)
+    print(dff.min().min())
+    st.plotly_chart(test.yay2(dff))
 
 
     #     }
@@ -189,10 +229,92 @@ def main_alpha():
     # app.run(complex_nav)
 
 
+
+def plotviolin():
+
+    # 12 sets of normal distributed random data, with increasing mean and standard deviation
+    # data = (np.linspace(1, 2, 12)[:, np.newaxis] * np.random.randn(12, 200) +
+    #             (np.arange(12) + 2 * np.random.random(12))[:, np.newaxis])
+
+    uploaded_file = "./data/AF_468597_TMP.tmp"
+    df = pd.read_csv(
+                uploaded_file,
+                sep=r'\s+',
+                skiprows=3,
+                # header=0,
+                names=["Year", "j", "tmax", "tmin"]
+                )
+    year = df.iloc[0, 0]
+    df = df.loc[:, ["Year", "tmax", "tmin"]]
+    # st.write(info)
+    df.index = pd.date_range(f'1/1/{year}', periods=len(df))
+    # dff.columns = ['Precipitation']
+    # st.write(dff.columns)
+    # df.rename(columns={"pcp":"Precipitation"}, inplace=True)
+    df.index.name = "Date"
+
+
+    years = df.index.year.unique()
+    dff = pd.DataFrame()
+    meanvals = []
+    for y in years:
+        dfj = df.loc[df.index.year == y, "tmax"]
+        meanvals.append(dfj.mean())
+        dfj.index = dfj.index.dayofyear
+        dff = pd.concat([dff, dfj], axis=1, ignore_index=True)
+        # dff[y] = df.loc[df.index.year == y]
+    
+    dff.columns = years
+    data = dff.dropna().to_numpy()
+
+    print(type(meanvals))
+    colors = n_colors('rgb(5, 200, 200)', 'rgb(200, 10, 10)', len(meanvals), colortype='rgb')
+    print(type(colors))
+
+
+
+    fig = go.Figure()
+    for data_line, color, y in zip(data, colors, years):
+        fig.add_trace(
+            go.Violin(
+                x=data_line, 
+                line_color=color, 
+                # colorscale="Bluered_r",
+                name=y
+                )
+                # use_colorscale=True
+                )
+
+    fig.update_traces(orientation='h', side='positive', width=3, points="outliers")
+    fig.update_layout(
+        height=1000,
+        width=950,
+        xaxis_showgrid=False, xaxis_zeroline=False)
+    # fig.show()
+
+    fig.update_layout(
+        title="Minimum and maximum daily temperatures in Lincoln, NE (2016)",
+        height=1000,
+        width=950,
+        font_size=14,
+        plot_bgcolor="rgb(245, 245, 245)",
+        xaxis_gridcolor="white",
+        yaxis_gridcolor="white",
+        xaxis_gridwidth=2,
+        yaxis_title="Month",
+        xaxis_title="Temperature [F]",
+        showlegend=False,
+    )
+
+    return fig
+
 if __name__ == '__main__':
     # main()
-    df = main_alpha()
+    # df = main_alpha()
     # df = df.loc[:, "Precipitation"].groupby(df.index.year)
 
     # print(df[2010])
     # print(df[2010])
+    # main_tmp()
+    plotviolin()
+    st.plotly_chart(plotviolin())
