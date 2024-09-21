@@ -13,6 +13,7 @@ import numpy as np
 np.random.seed(1)
 
 
+
 st.set_page_config(
     page_title="Ex-stream-ly Cool App",
     page_icon="🧊",
@@ -24,7 +25,7 @@ st.set_page_config(
         'About': "# This is a header. This is an *extremely* cool app!"
     }
 )
-from apps import test
+from apps import analyzer
 import handler
 
 
@@ -102,7 +103,7 @@ st.sidebar.markdown(
 )
 
 
-# def main():
+# def main_ridgeplot():
 #     pcp_file = st.sidebar.file_uploader("PCP file from SWAT")
 #     if pcp_file:
 #         df_pcp = handler.read_pcp(pcp_file)
@@ -139,7 +140,64 @@ st.sidebar.markdown(
 #     # over_theme = {'txc_inactive': '#FFFFFF'}
 
 
+def main2():
+    pcp_file = st.sidebar.file_uploader("PCP file from SWAT")
+    if pcp_file:
+        df_pcp = handler.read_pcp(pcp_file)
+
+    tmp_file = st.sidebar.file_uploader("TMP file from SWAT")
+    if tmp_file:
+        dff, data, colors, years = handler.read_tmp(tmp_file)
+        st.plotly_chart(analyzer.viz(data, colors, years), use_container_width=True)
+
+def main03():
+    pcp_file = st.sidebar.file_uploader("PCP file from SWAT")
+    tmp_file = st.sidebar.file_uploader("TMP file from SWAT")
+
+    if tmp_file:
+        col1, col2 = st.columns(2)
+        with col1:
+            st.dataframe(handler.get_db(tmp_file, pcp_file))
+        with col2:
+            var = st.selectbox(
+                "How would you like to be contacted?",
+                ("tmin", "tmax", "tmean", "pcp"),
+                )
+        dft = handler.get_db(tmp_file, pcp_file)
+        # print(dft)
+        data, colors, years = handler.read_tmp(dft, var)
+        # handler.read_tmp(dft)
+        st.plotly_chart(analyzer.viz(data, colors, years, var), use_container_width=True)
+        st.plotly_chart(analyzer.viz_mon(dft, var), use_container_width=True)
+
+
+def main():
+    pcp_file = st.sidebar.file_uploader("PCP file from SWAT")
+    fdpcp_file = st.sidebar.file_uploader("Adjusted Historical Data file from Farmdure(팜두레)")
+    if pcp_file and fdpcp_file:
+        col1, col2 = st.columns(2)
+        with col1:
+            st.dataframe(handler.get_db(pcp_file, fdpcp_file))
+        st.plotly_chart(analyzer.viz_pcp(handler.get_db(pcp_file, fdpcp_file)), use_container_width=True)
+        st.plotly_chart(analyzer.viz_pcp_dec(handler.get_db(pcp_file, fdpcp_file)), use_container_width=True)
+        col3, col4 = st.columns([2, 3])
+        with col3:
+            ext_th = st.number_input(
+                "Threshold for extreme event",
+                min_value=1,
+                value=10)
+            st.plotly_chart(analyzer.fdc(handler.get_db(pcp_file, fdpcp_file), ext_th), use_container_width=True)
+        with col4:
+            st.dataframe(analyzer.table_(handler.get_db(pcp_file, fdpcp_file), ext_th))
+        # st.line_chart(analyzer.table_(handler.get_db(pcp_file, fdpcp_file), ext_th))
+        # st.dataframe(handler.table_(pcp_file, fdpcp_file))
+        # analyzer.viz_pcp_dec(handler.get_db(pcp_file, fdpcp_file))
+        st.plotly_chart(analyzer.bar_(handler.get_db(pcp_file, fdpcp_file), ext_th), use_container_width=True)
+
+
+
 def main_alpha():
+    
     uploaded_file = "./data/AF_468597.pcp"
     df = pd.read_csv(
                 uploaded_file,
@@ -171,7 +229,7 @@ def main_alpha():
     # ss  = df.loc[df.index.year == 2019]
     # print(ss)
     print(dff.to_numpy())
-    st.plotly_chart(test.yay2(dff))
+    st.plotly_chart(analyzer.yay2(dff))
 
     # return df
         
@@ -208,7 +266,7 @@ def main_tmp():
     # ss  = df.loc[df.index.year == 2019]
     # print(ss)
     print(dff.min().min())
-    st.plotly_chart(test.yay2(dff))
+    st.plotly_chart(analyzer.yay2(dff))
 
 
     #     }
@@ -230,66 +288,68 @@ def main_tmp():
 
 
 
+
+def create_color_list(min_val, max_val, num_colors):
+    """Creates a list of colors based on min/max values."""
+
+    cmap = plt.get_cmap('viridis')  # Choose your desired colormap
+    norm = plt.Normalize(min_val, max_val)
+    colors = [cmap(norm(value)) for value in np.linspace(min_val, max_val, num_colors)]
+    return colors
+
+
 def plotviolin():
 
     # 12 sets of normal distributed random data, with increasing mean and standard deviation
     # data = (np.linspace(1, 2, 12)[:, np.newaxis] * np.random.randn(12, 200) +
     #             (np.arange(12) + 2 * np.random.random(12))[:, np.newaxis])
-
-    uploaded_file = "./data/AF_468597_TMP.tmp"
+    uploaded_file = "./data/AF_468597.pcp"
     df = pd.read_csv(
                 uploaded_file,
                 sep=r'\s+',
                 skiprows=3,
                 # header=0,
-                names=["Year", "j", "tmax", "tmin"]
+                names=["Year", "j", "pcp", "lat", "lon"]
                 )
     year = df.iloc[0, 0]
-    df = df.loc[:, ["Year", "tmax", "tmin"]]
-    # st.write(info)
+    df = df.loc[:, ["Year", "pcp"]]
     df.index = pd.date_range(f'1/1/{year}', periods=len(df))
-    # dff.columns = ['Precipitation']
-    # st.write(dff.columns)
-    # df.rename(columns={"pcp":"Precipitation"}, inplace=True)
     df.index.name = "Date"
-
-
     years = df.index.year.unique()
     dff = pd.DataFrame()
     meanvals = []
     for y in years:
-        dfj = df.loc[df.index.year == y, "tmax"]
+        dfj = df.loc[df.index.year == y, "pcp"]
         meanvals.append(dfj.mean())
         dfj.index = dfj.index.dayofyear
         dff = pd.concat([dff, dfj], axis=1, ignore_index=True)
-        # dff[y] = df.loc[df.index.year == y]
-    
     dff.columns = years
     data = dff.dropna().to_numpy()
-
-    print(type(meanvals))
     colors = n_colors('rgb(5, 200, 200)', 'rgb(200, 10, 10)', len(meanvals), colortype='rgb')
-    print(type(colors))
-
-
+    # co_df = pd.DataFrame({"year":years, "mvals": meanvals})
+    # co_df = co_df.sort_values('mvals')
+    # co_df['colrs'] = colors
+    # co_df = co_df.sort_values('year')
 
     fig = go.Figure()
-    for data_line, color, y in zip(data, colors, years):
+    for data_line, color, y in zip(data.T, colors, years):
+        print(data_line)
         fig.add_trace(
             go.Violin(
                 x=data_line, 
                 line_color=color, 
                 # colorscale="Bluered_r",
+                # color_continuous_scale="rainbow",
                 name=y
                 )
                 # use_colorscale=True
                 )
 
-    fig.update_traces(orientation='h', side='positive', width=3, points="outliers")
-    fig.update_layout(
-        height=1000,
-        width=950,
-        xaxis_showgrid=False, xaxis_zeroline=False)
+
+
+
+    fig.update_traces(orientation='h', side='positive', width=3, points="outliers",
+                      meanline_visible=True,)
     # fig.show()
 
     fig.update_layout(
@@ -303,9 +363,8 @@ def plotviolin():
         xaxis_gridwidth=2,
         yaxis_title="Month",
         xaxis_title="Temperature [F]",
-        showlegend=False,
+        showlegend=True,
     )
-
     return fig
 
 if __name__ == '__main__':
@@ -316,5 +375,6 @@ if __name__ == '__main__':
     # print(df[2010])
     # print(df[2010])
     # main_tmp()
-    plotviolin()
-    st.plotly_chart(plotviolin())
+    # plotviolin()
+    # st.plotly_chart(plotviolin(), use_container_width=True)
+    main()
